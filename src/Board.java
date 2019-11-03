@@ -1,20 +1,20 @@
 public class Board {
-    public final int NUM_SPACES = 56;
+    public final int NUM_SPACES = 57;
     public final int NUM_PIECES = 4;
     public final int NUM_HOMESPACES = 6;
     public Space[] spaces;
     public Space startspace;
-    public Space[] homespace;
+    public Space[] homespaces;
     public Piece[] pieces;
 
     public Board(){
         //Create spaces around board
         spaces = new Space[NUM_SPACES];
-        for (int i = 0; i < NUM_SPACES; i++){
-            if(i==5 || i == 11 || i== 19  || i == 25 || i == 33 || i == 39 || i == 47 || i == 53){
-                spaces[i] = new Space(true, false, false, 1);
+        for (int i = 1; i < NUM_SPACES; i++){
+            if(i==6 || i == 12 || i== 20  || i == 26 || i == 34 || i == 40 || i == 48 || i == 54){
+                spaces[i] = new Space(i,true, false, false, 1);
             }else {
-                spaces[i] = new Space(false, false, false,1);
+                spaces[i] = new Space(i,false, false, false,1);
             }
         }
         //create game pieces
@@ -24,12 +24,12 @@ public class Board {
         }
 
         //create homespace
-        homespace = new Space[NUM_HOMESPACES];
+        homespaces = new Space[NUM_HOMESPACES];
         for(int i = 0; i < NUM_HOMESPACES; i++){
-            homespace[i] = new Space(false, false, true, NUM_PIECES);
+            homespaces[i] = new Space(57,false, false, true, NUM_PIECES);
         }
         //create startspaces
-        startspace = new Space(false,false,true,NUM_PIECES);
+        startspace = new Space(0,false,false,true,NUM_PIECES);
         //populate startspace
 
 
@@ -39,21 +39,30 @@ public class Board {
 
     }
 
-    public String printBoardState(){
-        for(int i = 0; i <1; i++){
-
+    @Override
+    public String toString(){
+        String h = "";
+        for(int i = 0; i <NUM_HOMESPACES; i++){
+            h = h + homespaces[i].toString() + "\n";
         }
-        return String.format("%s", "Boardstate:");
+        String s = "";
+        for(int i = 1; i <NUM_SPACES; i++){
+            s = s + spaces[i].toString() + "\n";
+        }
+        return String.format("Start space: %n%s%n" +
+                            "Board Spaces: %n%s%n" +
+                            "Home Spaces: %n%s%n", startspace.toString(), s, h);
     }
 
     private class Space{
         public int number;
         public boolean slider; // true if sends player 5 forward, false if not
-        public int[] occupyingpiece; //an array storing the indicies of pieces
+        public int[] occupyingpiece; //an array storing the indicies of pieces occupying space. -1 if false.
         public boolean occupied;
         public boolean shareable;
 
-        public Space(boolean Sliderstate, boolean Occupied, boolean Shareable, int spaces){
+        public Space(int num, boolean Sliderstate, boolean Occupied, boolean Shareable, int spaces){
+            number = num;
             slider = Sliderstate;
             occupied = Occupied;
             shareable = Shareable;
@@ -89,7 +98,19 @@ public class Board {
             return -1;
         }
 
-
+        public String toString(){
+            String p = "";
+            for (int i= 0; i < occupyingpiece.length; i ++){
+                if(occupyingpiece[i] != -1){
+                    p = p + pieces[occupyingpiece[i]].toString() + " ";
+                }
+            }
+            return String.format("Space: %d%s%s%s%s", number,
+                    slider ? ", Slider Space" : "",
+                    occupied ? ", Occupied" : "",
+                    shareable ? ", Shareable": "",
+                    p);
+        }
     }
 
     private class Piece{
@@ -98,6 +119,11 @@ public class Board {
         public Piece(String Color, int Num){
             color = Color;
             num = Num;
+        }
+
+        @Override
+        public String toString(){
+            return String.format("Piece #%n, Color: %n", num, color);
         }
     }
 
