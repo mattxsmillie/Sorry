@@ -12,6 +12,7 @@ public class SorryGame{
 //        }
 
 
+
         myBoard = new Board();
         System.out.print(myBoard.toString());
     }
