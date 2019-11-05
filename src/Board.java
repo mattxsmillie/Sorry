@@ -1,41 +1,90 @@
 public class Board {
-    public final int NUM_SPACES = 57;
+    public final int NUM_SPACES = 60;
     public final int NUM_PIECES = 4;
     public final int NUM_HOMESPACES = 6;
-    public Space[] spaces;
+    public Space[] spaces; //spaces are numbered from 1, not 0
     public Space startspace;
     public Space[] homespaces;
     public Piece[] pieces;
 
     public Board(){
         //Create spaces around board
-        spaces = new Space[NUM_SPACES];
-        for (int i = 1; i < NUM_SPACES; i++){
-            if(i==6 || i == 12 || i== 20  || i == 26 || i == 34 || i == 40 || i == 48 || i == 54){
-                spaces[i] = new Space(i,true, false, false, 1);
+        spaces = new Space[NUM_SPACES + 1];
+        for (int i = 1; i < NUM_SPACES + 1; i++){
+            if(i==6 || i== 21  || i == 36 || i == 43 ||  i == 51){
+                spaces[i] = new Space(i,4, false, 1);
+            }else if(i == 12 || i == 28 || i == 40 || i == 48 || i== 58){
+                spaces[i] = new Space(i,3, false, 1);
             }else {
-                spaces[i] = new Space(i,false, false, false,1);
+                spaces[i] = new Space(i,0, false,1);
             }
-        }
-        //create game pieces
-        pieces = new Piece[NUM_PIECES];
-        for (int i = 0; i < NUM_PIECES; i++){
-            pieces[i] = new Piece("Green", i);
         }
 
         //create homespace
         homespaces = new Space[NUM_HOMESPACES];
         for(int i = 0; i < NUM_HOMESPACES; i++){
-            homespaces[i] = new Space(57,false, false, true, NUM_PIECES);
+            homespaces[i] = new Space(58,0, true, NUM_PIECES);
         }
         //create startspaces
-        startspace = new Space(0,false,false,true,NUM_PIECES);
+        startspace = new Space(0,0, true,NUM_PIECES);
         //populate startspace
 
-
+        //create game pieces, place on start
+        pieces = new Piece[NUM_PIECES];
+        for (int i = 0; i < NUM_PIECES; i++){
+            pieces[i] = new Piece("Green", i);
+            startspace.addPiece(pieces[i]);
+        }
     }
 
-    public void move(Card c){
+    public void move(Piece p, Card c){
+        //find piece p  on board
+        //start
+        if(startspace.findPiece(p)){
+            if(c.value.equals("1")||c.value.equals("2")){
+                startspace.removePiece(p);
+                spaces[1].addPiece(p);
+            }
+        }else{
+            //board
+            int d = c.getMoveDistance();
+            for(int i = 1; i < NUM_SPACES + 1; i++){
+                if(spaces[i].findPiece(p)){
+                    spaces[i].removePiece(p);
+                    if(i <= 59 && i + d > 59){
+                        int h = d - 59 - i;
+                        if(h > 5){
+                            homespaces[5].addPiece(p);
+                        }else{
+                            homespaces[h].addPiece(p);
+                        }
+                    }else {
+                        //cycle forward
+                        if(i + d > 60) {
+                            spaces[60 - i + d + spaces[i].sliderval].addPiece(p);
+                        }else if(i == 1 && d == -1){ //cycle backward
+                            spaces[60].addPiece(p);
+                        }else {
+                            spaces[i + d + spaces[i].sliderval].addPiece(p);
+                        }
+                    }
+                    break;
+                }
+            }
+            for(int i = 0; i < NUM_HOMESPACES; i++){
+                if(homespaces[i].findPiece(p)){
+                    if(i + d > 5){
+                        homespaces[5].addPiece(p);
+                    }else{
+                        homespaces[d].addPiece(p);
+                    }
+                    break;
+                }
+            }
+        }
+        //home
+        //determine space to move it to
+
 
     }
 
@@ -46,7 +95,7 @@ public class Board {
             h = h + homespaces[i].toString() + "\n";
         }
         String s = "";
-        for(int i = 1; i <NUM_SPACES; i++){
+        for(int i = 1; i <NUM_SPACES + 1; i++){
             s = s + spaces[i].toString() + "\n";
         }
         return String.format("Start space: %n%s%n" +
@@ -55,16 +104,14 @@ public class Board {
     }
 
     private class Space{
-        public int number;
-        public boolean slider; // true if sends player 5 forward, false if not
-        public int[] occupyingpiece; //an array storing the indicies of pieces occupying space. -1 if false.
-        public boolean occupied;
+        public int number; //position on board.
+        public int sliderval; // number of spaces forward the space sends a piece
+        public int[] occupyingpiece; //an array storing the indicies of pieces occupying space. -1 if empty.
         public boolean shareable;
 
-        public Space(int num, boolean Sliderstate, boolean Occupied, boolean Shareable, int spaces){
+        public Space(int num, int snum,boolean Shareable, int spaces){
             number = num;
-            slider = Sliderstate;
-            occupied = Occupied;
+            sliderval = snum;
             shareable = Shareable;
             if(Shareable) {
                 occupyingpiece = new int[spaces];
@@ -78,24 +125,44 @@ public class Board {
         }
 
         public int addPiece(Piece p){
-            if(shareable){
+            if(shareable){ //place piece on the space
                 for(int i = 0; i < occupyingpiece.length; i++){
                     if(occupyingpiece[i] == -1){
-                        occupyingpiece[i] = p.num;
+                        occupyingpiece[i] = p.num; //place piece there
                         return -1;
                     }
                 }
             }else{
-                //send original piece back to start
-                int old = occupyingpiece[0];
+                //check if occupied
+                if(occupyingpiece[0] != -1){//send original piece back to start
+                    if(occupyingpiece[0] != p.num) { //ensure its not the piece itself
+                        int old = occupyingpiece[0];
+                        startspace.addPiece(pieces[old]);
+                    }
+                }
                 occupyingpiece[0] = p.num;
-                return old;
             }
             return -1;
         }
 
-        public int removePiece(Piece P){
+        public int removePiece(Piece p){
+            for(int i = 0; i < occupyingpiece.length; i++){
+                if(occupyingpiece[i] == p.num){
+                    occupyingpiece[i] = -1;
+                    return p.num;
+                }
+            }
             return -1;
+        }
+
+        //determines whether piece is on this space or not
+        public boolean findPiece(Piece p){
+            for(int i = 0; i< occupyingpiece.length; i++){
+                if(occupyingpiece[i] == p.num){
+                    return true;
+                }
+            }
+            return false;
         }
 
         public String toString(){
@@ -105,9 +172,7 @@ public class Board {
                     p = p + pieces[occupyingpiece[i]].toString() + " ";
                 }
             }
-            return String.format("Space: %d%s%s%s%s", number,
-                    slider ? ", Slider Space" : "",
-                    occupied ? ", Occupied" : "",
+            return String.format("Space: %d Slides %d%s %s", number,sliderval,
                     shareable ? ", Shareable": "",
                     p);
         }
@@ -123,7 +188,7 @@ public class Board {
 
         @Override
         public String toString(){
-            return String.format("Piece #%n, Color: %n", num, color);
+            return String.format("Piece #%d, %s", num, color);
         }
     }
 
