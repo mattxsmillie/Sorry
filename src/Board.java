@@ -43,7 +43,7 @@ public class Board {
         }else{
             for(int i = 0; i < NUM_HOMESPACES; i++){
                 if(homespaces[i].findPiece(p)) {
-                    return i+60;
+                    return i+61;
                 }
             }
             for(int i = 1; i < NUM_SPACES + 1; i++) {
@@ -93,15 +93,17 @@ public class Board {
                         break;
                     }
                 }
-                for (int i = 0; i < NUM_HOMESPACES - 1; i++) {
+                for (int i = 0; i < NUM_HOMESPACES; i++) {
                     if (homespaces[i].findPiece(p)) {
-                        homespaces[i].removePiece(p);
-                        if (i + d > 5) {
-                            homespaces[5].addPiece(p);
-                        }else if (i + d < 0) {
-                            homespaces[0].addPiece(p);
-                        } else {
+                        if (d < 5-i && i + d > 0) {
+                            // can only move to the home space if you draw the
+                            // right card, otherwise, you must stay on the space
+                            homespaces[i].removePiece(p);
                             homespaces[i + d].addPiece(p);
+                        }else if (i + d < 0) {
+                            //special case, to prevent pieces leaving home
+                            homespaces[i].removePiece(p);
+                            homespaces[0].addPiece(p);
                         }
                         break;
                     }
